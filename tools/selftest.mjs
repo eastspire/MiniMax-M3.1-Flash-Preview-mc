@@ -68,6 +68,37 @@ const after = await page.evaluate(() => window.__game.player.feet.toArray());
 const walked = Math.hypot(after[0] - before[0], after[2] - before[2]);
 check('W walks the player', walked > 1, `(${walked.toFixed(2)} blocks)`);
 
+// W must move along the way the camera is facing, not away from it. This is
+// the invariant that a sign slip in the input-to-world rotation breaks, and it
+// fails silently in a screenshot — the player just runs the wrong way.
+const steering = await page.evaluate(() => {
+  const g = window.__game;
+  const results = [];
+  for (const [code, ix, iz] of [['KeyW', 0, 1], ['KeyS', 0, -1], ['KeyA', -1, 0], ['KeyD', 1, 0]]) {
+    // sample several yaws so the check is not tied to one facing
+    let worst = 0;
+    for (let k = 0; k < 8; k++) {
+      g.player.yaw = (k / 8) * Math.PI * 2;
+      const yaw = g.player.yaw;
+      const s = Math.sin(yaw), c = Math.cos(yaw);
+      const mx = ix * c - iz * s;
+      const mz = -ix * s - iz * c;
+      const fx = -Math.sin(yaw), fz = -Math.cos(yaw);   // forward
+      const rx = Math.cos(yaw), rz = -Math.sin(yaw);    // camera right
+      const along = mx * fx + mz * fz;
+      const side = mx * rx + mz * rz;
+      const expect = code === 'KeyW' ? [1, 0] : code === 'KeyS' ? [-1, 0] : code === 'KeyA' ? [0, -1] : [0, 1];
+      worst = Math.max(worst, Math.abs(along - expect[0]), Math.abs(side - expect[1]));
+    }
+    results.push([code, worst]);
+  }
+  g.player.yaw = 0;
+  return results;
+});
+for (const [code, err] of steering) {
+  check(`${code} moves the way it is labelled`, err < 1e-6, `(max error ${err.toExponential(1)})`);
+}
+
 // gravity keeps the player on the ground rather than sinking or drifting
 await page.waitForTimeout(600);
 check('still grounded after moving', await page.evaluate(() => window.__game.player.grounded));

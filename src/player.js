@@ -161,9 +161,13 @@ export class Player {
     }
     const mag = Math.hypot(ix, iz);
     if (mag > 0) { ix /= mag; iz /= mag; }
+    // Rotate the input basis into world space. `forward()` is
+    // (-sin yaw, -cos yaw) and the camera's right is (cos yaw, -sin yaw), so
+    // the iz (forward/back) terms must both be negated — getting this sign
+    // wrong swaps W and S while leaving A and D looking perfectly fine.
     const s = Math.sin(this.yaw), c = Math.cos(this.yaw);
-    const wishX = ix * c + iz * s;
-    const wishZ = -ix * s + iz * c;
+    const wishX = ix * c - iz * s;
+    const wishZ = -ix * s - iz * c;
 
     this.sprinting = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight');
     let top = this.flying ? SPEED_FLY
