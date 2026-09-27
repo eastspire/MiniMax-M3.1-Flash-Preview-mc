@@ -6,7 +6,8 @@
   "scripts": {
     "serve": "node tools/serve.mjs . 8138",
     "shots": "node tools/capture.mjs",
-    "test": "node tools/selftest.mjs && node tools/check-nopointerlock.mjs"
+    "test": "node tools/selftest.mjs && node tools/check-nopointerlock.mjs && node tools/check-textures.mjs",
+    "textures": "node tools/check-textures.mjs"
   },
   "license": "MIT"
 }

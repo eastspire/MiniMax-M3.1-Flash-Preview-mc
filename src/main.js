@@ -132,7 +132,11 @@ const { texture: slices, averages } = createTextureArray();
 const passMaterials = [
   terrainMaterial(slices),                                  // solid
   terrainMaterial(slices, { cutout: 0.5 }),                 // leaves, glass
-  terrainMaterial(slices, { transparent: true, depthWrite: false, dim: 0.7, swell: true }), // fluid
+  // The fluid pass writes depth. Without it, quads blend in draw order
+  // regardless of distance, so a sheet of water far away that happens to be
+  // rasterised after a nearer one double-blends over it and the surface
+  // breaks into patches of uneven brightness.
+  terrainMaterial(slices, { transparent: true, dim: 0.7, swell: true }),
 ];
 const MESH_KEYS = ['opaque', 'alpha', 'fluid'];
 
@@ -461,9 +465,11 @@ function tick(stamp) {
   }
   if (placeCooldown > 0) placeCooldown -= dt;
 
-  // camera
+  // camera. Height comes from the player's eased view height so one-block
+  // terrain steps ramp instead of jolting; the walk bob rides on top of that.
   const bobY = Math.sin(player.gait * 2) * 0.034 * player.gaitAmount;
-  camera.position.set(player.feet.x, player.eyeY + bobY, player.feet.z);
+  const eye = player.viewEye(dt) + bobY;
+  camera.position.set(player.feet.x, eye, player.feet.z);
   const look = player.forward();
   camera.lookAt(camera.position.x + look.x, camera.position.y + look.y, camera.position.z + look.z);
 

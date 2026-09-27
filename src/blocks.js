@@ -357,8 +357,20 @@ function paint(name) {
 
     case 'fluid': {
       bm.wash(50, 108, 198, 170);
-      const rnd = stream(251);
-      bm.modulate(() => 0.9 + rnd() * 0.2);
+      // Coherent swell, not per-texel noise. Multiplying every pixel by its
+      // own random value looks fine on a single block but reads as dithering
+      // once the tile is magnified across a whole lake, because adjacent
+      // texels land on unrelated values.
+      for (let y = 0; y < TILE_PX; y++) {
+        for (let x = 0; x < TILE_PX; x++) {
+          const k = 0.95
+            + 0.040 * Math.sin(x * 0.62)
+            + 0.032 * Math.sin(y * 0.87 + 1.3)
+            + 0.018 * Math.sin((x + y) * 0.41);
+          const [r, g, bl, a] = bm.read(x, y);
+          bm.plot(x, y, cap(r * k), cap(g * k), cap(bl * k), a);
+        }
+      }
       break;
     }
 

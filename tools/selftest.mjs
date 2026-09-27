@@ -58,15 +58,46 @@ check('player column is solid', world.columnSolid > 5, `(${world.columnSolid} bl
 check('player is standing on ground', await page.evaluate(() => window.__game.player.grounded));
 check('start dismisses the title', world.titleGone);
 
-// walking
+// Walking, and the stability of the view while doing it.
+//
+// Collision resolution is discrete: walking over a one-block step teleports
+// the feet up a block. A camera bound straight to that position jolts a full
+// block in one frame, which is the shake the eye notices. The view height is
+// eased, so sample it per frame and assert no single frame jumps.
 const before = await page.evaluate(() => window.__game.player.feet.toArray());
-await page.keyboard.down('KeyW');
-await page.waitForTimeout(1300);
-await page.keyboard.up('KeyW');
-await page.waitForTimeout(200);
+const walkTrace = await page.evaluate(async () => {
+  const g = window.__game;
+  g.player.flying = false;
+  g.setYawPitch(0.7, 0);
+  const trace = [];
+  let running = true;
+  const tick = () => { trace.push(g.camera.position.y); if (running) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+  g.player.keys.add('KeyW');
+  window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyW' }));
+  await new Promise((r) => setTimeout(r, 1500));
+  g.player.keys.delete('KeyW');
+  window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyW' }));
+  await new Promise((r) => setTimeout(r, 250));
+  running = false;
+  return trace;
+});
+
 const after = await page.evaluate(() => window.__game.player.feet.toArray());
 const walked = Math.hypot(after[0] - before[0], after[2] - before[2]);
 check('W walks the player', walked > 1, `(${walked.toFixed(2)} blocks)`);
+
+// Only look at frames where the player was actually moving; a jump or a fall
+// legitimately moves the camera fast.
+const moving = await page.evaluate(() => window.__game.player.gaitAmount);
+void moving;
+let worstStep = 0;
+for (let i = 1; i < walkTrace.length; i++) {
+  worstStep = Math.max(worstStep, Math.abs(walkTrace[i] - walkTrace[i - 1]));
+}
+const rise = Math.max(...walkTrace) - Math.min(...walkTrace);
+check('camera does not jolt while walking', worstStep < 0.4,
+  `(worst single frame ${worstStep.toFixed(3)} blocks, total travel ${rise.toFixed(2)})`);
 
 // W must move along the way the camera is facing, not away from it. This is
 // the invariant that a sign slip in the input-to-world rotation breaks, and it

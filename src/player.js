@@ -56,10 +56,30 @@ export class Player {
     this.gaitAmount = 0;
     this.keys = new Set();
     this._carry = 0;
+    this._viewY = null;      // eased camera height; null until first use
   }
 
   get eyeY() { return this.feet.y + BODY_T - EYE_DROP; }
   get bodyTop() { return this.feet.y + BODY_T; }
+
+  /**
+   * Camera height, eased toward the true eye height.
+   *
+   * Collision resolution is discrete: walking over a one-block step teleports
+   * the feet up a block, and a camera bound straight to that position jolts a
+   * full block in a single frame. Easing it turns each step into a short ramp.
+   * Large changes still snap, otherwise a long fall would leave the camera
+   * trailing behind the player.
+   */
+  viewEye(dt) {
+    const target = this.eyeY;
+    if (this._viewY === null || Math.abs(target - this._viewY) > 2.5) {
+      this._viewY = target;
+    } else {
+      this._viewY += (target - this._viewY) * Math.min(1, dt * 18);
+    }
+    return this._viewY;
+  }
 
   // ------------------------------------------------------------- looking
 
@@ -354,6 +374,7 @@ export class Player {
     this.speed.set(0, 0, 0);
     this.flying = false;
     this.grounded = false;
+    this._viewY = null;          // drop any easing from the previous position
     this.yaw = site.angle === undefined
       ? this.facingFor(site.x, site.h, site.z)
       : yawForAngle(site.angle);
