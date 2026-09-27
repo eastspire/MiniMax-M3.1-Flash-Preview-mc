@@ -1,0 +1,375 @@
+/* Cubeworld interface.
+ *
+ * Built in layers: tokens first, then primitives, then components. The token
+ * block is the only place colours, spacing and radii are defined — everything
+ * below composes from it, so the palette can be retuned in one place.
+ */
+
+/* ============================================================ 1. tokens */
+
+:root {
+  /* surfaces, from the page backdrop out to the raised panels */
+  --abyss: #070a0f;
+  --panel: rgb(13 17 25 / 0.78);
+  --panel-edge: rgb(255 255 255 / 0.1);
+  --veil: radial-gradient(130% 110% at 50% -10%, rgb(24 40 68 / 0.55), rgb(4 7 11 / 0.86));
+
+  /* ink */
+  --ink: #eef3fb;
+  --ink-soft: rgb(238 243 251 / 0.66);
+  --ink-faint: rgb(238 243 251 / 0.4);
+  --accent: #ffcb5c;
+  --accent-deep: #f0a92c;
+
+  /* metrics */
+  --cell: 48px;
+  --cell-gap: 5px;
+  --pad-card: 34px 40px;
+  --radius-card: 14px;
+  --radius-cell: 9px;
+
+  --type-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --type-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --lift: 0 22px 48px rgb(0 0 0 / 0.45);
+  --edge-soft: 0 1px 2px rgb(0 0 0 / 0.7);
+}
+
+/* ========================================================= 2. primitives */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html,
+body {
+  block-size: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--abyss);
+  color: var(--ink);
+  font-family: var(--type-ui);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#viewport {
+  display: block;
+  inline-size: 100vw;
+  block-size: 100vh;
+}
+
+kbd {
+  display: inline-block;
+  min-inline-size: 2.6em;
+  padding: 1px 5px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 5px;
+  background: rgb(255 255 255 / 0.06);
+  font: 600 10px/1.5 var(--type-mono);
+  text-align: center;
+  color: var(--ink);
+}
+
+/* Underwater grade. Sits above the canvas, below the shell. */
+#submerged {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    linear-gradient(180deg, rgb(22 96 174 / 0.45), rgb(6 34 84 / 0.7));
+  transition: opacity 220ms ease;
+}
+#submerged[data-active='1'] { opacity: 1; }
+
+/* ========================================================== 3. overlays */
+
+/* #boot and #title share the same treatment. */
+#boot,
+#title {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--veil);
+  backdrop-filter: blur(3px);
+  transition: opacity 320ms ease, visibility 320ms;
+}
+#boot[data-done='1'],
+#title[data-done='1'] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.card {
+  inline-size: min(520px, 100%);
+  padding: var(--pad-card);
+  border: 1px solid var(--panel-edge);
+  border-radius: var(--radius-card);
+  background: var(--panel);
+  box-shadow: var(--lift);
+  text-align: center;
+}
+
+.card h1,
+.card h2 {
+  margin: 0;
+  letter-spacing: 0.5px;
+  background: linear-gradient(178deg, #fff 30%, #9dbcff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.card h1 { font-size: 44px; }
+.card h2 { font-size: 24px; }
+
+.tagline {
+  margin: 8px 0 22px;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.card ol {
+  margin: 0 0 26px;
+  padding-inline-start: 18px;
+  text-align: start;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 2;
+}
+.card ol li::marker { color: var(--accent); }
+
+#begin {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 13px 34px;
+  background: linear-gradient(180deg, #fdfdff, #c3d7ff);
+  box-shadow: 0 8px 18px rgb(0 0 0 / 0.35);
+  color: #0d121b;
+  font: 600 15px var(--type-ui);
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+#begin:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgb(0 0 0 / 0.42);
+}
+#begin:active { transform: translateY(0); }
+
+.fineprint {
+  margin: 18px 0 0;
+  color: var(--ink-faint);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+/* Progress meter used by the boot card. */
+.meter {
+  block-size: 6px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.12);
+  overflow: hidden;
+}
+.meter i {
+  display: block;
+  block-size: 100%;
+  inline-size: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #86c9ff, var(--accent));
+  transition: inline-size 200ms ease;
+}
+#meter-caption {
+  margin: 12px 0 0;
+  color: var(--ink-faint);
+  font: 12px var(--type-mono);
+}
+
+/* =============================================================== 4. shell */
+
+#shell {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  user-select: none;
+}
+#shell[hidden] { display: none; }
+
+/* ---- crosshair: a broken ring plus a centre dot ---- */
+
+#reticle {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: 20px;
+  block-size: 20px;
+  translate: -50% -50%;
+}
+#reticle::before,
+#reticle::after {
+  content: '';
+  position: absolute;
+  mix-blend-mode: difference;
+}
+/* Four arcs with gaps at the diagonals, cut out of a ring with a conic mask. */
+#reticle::before {
+  inset: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #fff;
+  mask: conic-gradient(from 50deg,
+    #000 0 34deg, transparent 34deg 56deg,
+    #000 56deg 124deg, transparent 124deg 146deg,
+    #000 146deg 214deg, transparent 214deg 236deg,
+    #000 236deg 304deg, transparent 304deg 326deg,
+    #000 326deg 360deg);
+  -webkit-mask: conic-gradient(from 50deg,
+    #000 0 34deg, transparent 34deg 56deg,
+    #000 56deg 124deg, transparent 124deg 146deg,
+    #000 146deg 214deg, transparent 214deg 236deg,
+    #000 236deg 304deg, transparent 304deg 326deg,
+    #000 326deg 360deg);
+}
+#reticle::after {
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: 3px;
+  block-size: 3px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: #fff;
+}
+
+/* ---- debug readout ---- */
+
+#readout {
+  position: absolute;
+  inset-block-start: 12px;
+  inset-inline-start: 12px;
+  padding: 9px 13px;
+  border-inline-start: 3px solid rgb(255 255 255 / 0.42);
+  border-radius: 0 4px 4px 0;
+  background: rgb(6 10 17 / 0.44);
+  font: 12px/1.65 var(--type-mono);
+  text-shadow: var(--edge-soft);
+}
+#readout b { color: var(--accent); font-weight: 600; }
+
+/* ---- transient message ---- */
+
+#flash {
+  position: absolute;
+  inset-block-end: calc(var(--cell) + 46px);
+  inset-inline-start: 50%;
+  margin: 0;
+  padding: 8px 16px;
+  translate: -50% 6px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 999px;
+  background: rgb(5 9 15 / 0.72);
+  color: var(--ink);
+  font: 600 13px/1 var(--type-ui);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 180ms ease, translate 180ms ease;
+}
+#flash[data-show='1'] { opacity: 1; translate: -50% 0; }
+
+/* ---- hotbar ---- */
+
+#belt {
+  position: absolute;
+  inset-block-end: 16px;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  display: flex;
+  gap: var(--cell-gap);
+  padding: 4px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 12px;
+  background: rgb(5 9 15 / 0.46);
+}
+
+.cell {
+  position: relative;
+  inline-size: var(--cell);
+  block-size: var(--cell);
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-cell);
+  background: rgb(255 255 255 / 0.05);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.28);
+}
+.cell[data-on='1'] {
+  background: rgb(255 255 255 / 0.17);
+  box-shadow: inset 0 0 0 2px #fff, 0 0 16px rgb(255 255 255 / 0.28);
+}
+
+.cell canvas {
+  inline-size: 36px;
+  block-size: 36px;
+  image-rendering: pixelated;
+}
+
+.cell .key {
+  position: absolute;
+  inset-block-end: 1px;
+  inset-inline-end: 3px;
+  color: rgb(255 255 255 / 0.75);
+  font: 10px/1 var(--type-ui);
+  text-shadow: var(--edge-soft);
+}
+
+.cell .title {
+  position: absolute;
+  inset-block-start: -20px;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  color: #fff;
+  font: 600 11px/1 var(--type-ui);
+  white-space: nowrap;
+  text-shadow: var(--edge-soft);
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+.cell[data-on='1'] .title { opacity: 1; }
+
+/* ---- control legend ---- */
+
+#legend {
+  position: absolute;
+  inset-block-end: 14px;
+  inset-inline-end: 12px;
+}
+#legend ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+#legend li {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  text-shadow: var(--edge-soft);
+}
+
+/* Compact mode, toggled with F3. */
+#shell[data-trim='1'] #readout,
+#shell[data-trim='1'] #legend { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after { transition-duration: 1ms !important; }
+}

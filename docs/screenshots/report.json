@@ -1,0 +1,40 @@
+{
+  "url": "http://127.0.0.1:8138/",
+  "when": "2026-09-27T12:09:35.815Z",
+  "pageErrors": [],
+  "consoleErrors": [],
+  "perf": {
+    "fps": 60,
+    "chunks": 225,
+    "draws": 723,
+    "tris": 2094672,
+    "at": [
+      -7,
+      64,
+      -1
+    ],
+    "land": "Meadow"
+  },
+  "shots": [
+    "01-title.png",
+    "02-spawn.png",
+    "03-walking.png",
+    "04-hut.png",
+    "05-wall.png",
+    "06-mining.png",
+    "07-mined-hole.png",
+    "08-mountains.png",
+    "09-woodland.png",
+    "10-dunes.png",
+    "11-tundra.png",
+    "12-shore.png",
+    "13-ocean.png",
+    "14-noon.png",
+    "15-sunset.png",
+    "16-night.png",
+    "17-dawn.png",
+    "18-aerial.png",
+    "19-underwater.png",
+    "20-overview.png"
+  ]
+}

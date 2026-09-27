@@ -1,0 +1,12 @@
+{
+  "name": "cubeworld",
+  "version": "1.0.0",
+  "description": "Cubeworld - a browser voxel sandbox rendered with WebGL2 + three.js",
+  "type": "module",
+  "scripts": {
+    "serve": "node tools/serve.mjs . 8138",
+    "shots": "node tools/capture.mjs",
+    "test": "node tools/selftest.mjs && node tools/check-nopointerlock.mjs"
+  },
+  "license": "MIT"
+}
